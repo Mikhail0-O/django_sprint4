@@ -1,0 +1,24 @@
+.column-title {
+    min-width: 20px;
+}
+
+.column-text {
+    min-width: 300px;
+}
+
+.column-pub_date {
+    min-width: 20px;
+
+}
+
+.column-author {
+    min-width: 20px;
+}
+
+.column-category {
+    min-width: 20px;
+}
+
+.column-is_published {
+    min-width: 20px;
+}
