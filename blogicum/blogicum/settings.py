@@ -25,7 +25,10 @@ SECRET_KEY = 'django-insecure-@f-_e&!roe4e+uz*)w_9-f*@-&+@8oq@hkibv_!^1cv@8^sfnk
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+]
 
 
 # Application definition
@@ -120,7 +123,7 @@ TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
-USE_L10N = True
+USE_L10N = False
 
 USE_TZ = True
 
@@ -141,3 +144,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Новые константы, чтобы не запутаться
 LOGIN_REDIRECT_URL = 'blog:index'
+
+LOGIN_URL = 'login'
+
+MEDIA_ROOT = BASE_DIR / 'media'

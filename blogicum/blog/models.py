@@ -38,6 +38,8 @@ class Post(PublishedModel, CreatedAtModel):
         null=True,
         verbose_name='Категория',
     )
+    image = models.ImageField('Фото', blank=True)
+    # comment_count = models.IntegerField('Комментарии', blank=True)
 
     class Meta:
         ordering = ('-pub_date',)
@@ -47,6 +49,10 @@ class Post(PublishedModel, CreatedAtModel):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        # С помощью функции reverse() возвращаем URL объекта.
+        return reverse('blog:post_detail', kwargs={'pk': self.pk})
 
 
 class Category(PublishedModel, CreatedAtModel):
