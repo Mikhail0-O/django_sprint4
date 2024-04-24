@@ -1,6 +1,6 @@
 from django.db.models.base import Model as Model
 from django.db.models.query import QuerySet
-from django.http import HttpRequest, HttpResponseForbidden, HttpResponseNotFound
+from django.http import HttpRequest, HttpResponseForbidden, HttpResponseNotFound, Http404
 from django.http.response import HttpResponseRedirect
 from django.utils import timezone
 
@@ -58,29 +58,38 @@ def posts_query_set():
 
 class PostListView(ListView):
     model = Post
-    queryset = Post.objects.select_related(
-        'location',
-        'category',
-        'author',
-    ).filter(Q(is_published=True)
-             & Q(category__is_published=True)
-             & Q(pub_date__lte=timezone.now()))
+    # queryset = Post.objects.select_related(
+    #     'location',
+    #     'category',
+    #     'author',
+    # ).filter(Q(is_published=True)
+    #          & Q(category__is_published=True)
+    #          & Q(pub_date__lte=timezone.now()))
     template_name = 'blog/index.html'
     ordering = '-pub_date'
     paginate_by = 10
 
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        form.instance.post_id = self.post_id.id
+        return super().form_valid(form)
 
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     page_obj = Post.objects.select_related(
-    #         'location',
-    #         'category',
-    #         'author',
-    #     ).filter(Q(is_published=True)
-    #              & Q(category__is_published=True)
-    #              & Q(pub_date__lte=timezone.now()))
-    #     context['page_obj'] = page_obj
-    #     return context
+    def get_context_data(self, **kwargs):
+        # post = self.get_object()
+        context = super().get_context_data(**kwargs)
+        page_obj = Post.objects.select_related(
+            'location',
+            'category',
+            'author',
+        ).filter(Q(is_published=True)
+                 & Q(category__is_published=True)
+                 & Q(pub_date__lte=timezone.now()))
+        for post in page_obj:
+            comment_count = Comment.objects.filter(post=post).count()
+            post.comment_count = comment_count
+            print(comment_count)
+        context['page_obj'] = page_obj
+        return context
 
 
 class PostDetailView(UserPassesTestMixin, DetailView):
@@ -94,13 +103,13 @@ class PostDetailView(UserPassesTestMixin, DetailView):
             ((self.request.user.is_anonymous
              or self.request.user.is_authenticated)
              and post.is_published
-             and post.category.is_published
+             and (post.category and post.category.is_published)
              and post.pub_date <= timezone.now())
             or self.request.user == post.author
         )
 
     def handle_no_permission(self):
-        return HttpResponseNotFound()
+        raise Http404
 
     # def get_login_url(self):
     #     return reverse(
@@ -143,7 +152,11 @@ class UserDetailView(DetailView):
             'location',
             'category',
             'author',
-        ).filter(author__username=self.request.user.username)
+        ).filter(author__username=self.kwargs['username'])
+        for post in page_obj:
+            comment_count = Comment.objects.filter(post=post).count()
+            post.comment_count = comment_count
+            print(comment_count)
         context['page_obj'] = page_obj
         return context
 
@@ -154,6 +167,9 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.post_id = get_object_or_404(Post, pk=kwargs['pk'])
+        # if self.post_id.comment_count >= 0:
+        #     self.post_id.comment_count += 1
+        #     self.post_id.save()
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
@@ -166,19 +182,44 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return reverse('blog:post_detail', kwargs={'pk': pk})
 
 
-class CommentUpdateView(UpdateView):
+class CommentUpdateView(UserPassesTestMixin, UpdateView):
     model = Comment
     fields = ('text',)
     template_name = 'blog/comment.html'
 
+    def test_func(self):
+        comment = self.get_object()
+        print(self.request.user.is_authenticated and self.request.user.username == comment.author.username)
+        return (
+            self.request.user.is_authenticated
+            and self.request.user.username == comment.author.username
+        )
 
-class CommentDeleteView(DeleteView):
+    def handle_no_permission(self):
+        raise Http404
+
+
+class CommentDeleteView(UserPassesTestMixin, DeleteView):
     model = Comment
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.post_id = get_object_or_404(Post, pk=kwargs['id'])
+        # if self.post_id.comment_count >= 1:
+        #     self.post_id.comment_count -= 1
+        #     self.post_id.save()
         return super().dispatch(request, *args, **kwargs)
+
+    def test_func(self):
+        comment = self.get_object()
+        print(self.request.user.is_authenticated and self.request.user.username == comment.author.username)
+        return (
+            self.request.user.is_authenticated
+            and self.request.user.username == comment.author.username
+        )
+
+    def handle_no_permission(self):
+        raise Http404
 
     def get_success_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.post_id.id})

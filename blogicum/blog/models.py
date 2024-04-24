@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
 from core.models import PublishedModel, CreatedAtModel
 
@@ -39,7 +40,14 @@ class Post(PublishedModel, CreatedAtModel):
         verbose_name='Категория',
     )
     image = models.ImageField('Фото', blank=True)
-    # comment_count = models.IntegerField('Комментарии', blank=True)
+    comment_count = models.IntegerField('Комментарии', default=0)
+
+    # @property
+    # def comment_count(self):
+    #     # post = Post.objects.get(pk=self.pk).comments.count()
+    #     # if not post:
+    #     #     return 0
+    #     return self.comments.count()
 
     class Meta:
         ordering = ('-pub_date',)
