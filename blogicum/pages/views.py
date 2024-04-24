@@ -2,19 +2,12 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 
 
-# def about(request):
-#     template_name = 'pages/about.html'
-#     return render(request, template_name)
 class About(TemplateView):
     template_name = 'pages/about.html'
 
 
 class Rules(TemplateView):
     template_name = 'pages/rules.html'
-
-# def rules(request):
-#     template_name = 'pages/rules.html'
-#     return render(request, template_name)
 
 
 def page_not_found(request, exception):

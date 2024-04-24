@@ -14,7 +14,7 @@ class PostAdmin(admin.ModelAdmin):
         'is_published',
         'created_at'
     ]
-    
+
     list_editable = (
         'text',
         'pub_date',

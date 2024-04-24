@@ -27,9 +27,12 @@ from blog.forms import UserForm
 
 
 urlpatterns = [
-    path('auth/', include('django.contrib.auth.urls')),
-    path('pages/', include('pages.urls', namespace='pages')),
-    path('admin/', admin.site.urls),
+    path('auth/',
+         include('django.contrib.auth.urls')),
+    path('pages/',
+         include('pages.urls', namespace='pages')),
+    path('admin/',
+         admin.site.urls),
     path(
         'auth/registration/',
         CreateView.as_view(
@@ -39,7 +42,8 @@ urlpatterns = [
         ),
         name='registration',
     ),
-    path('', include('blog.urls', namespace='blog')),
+    path('',
+         include('blog.urls', namespace='blog')),
 
 ]
 

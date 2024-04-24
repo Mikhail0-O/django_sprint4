@@ -1,5 +1,3 @@
-from typing import Any
-from django.db.models.base import Model as Model
 from django.http import Http404
 from django.utils import timezone
 
@@ -182,7 +180,6 @@ class CommentUpdateView(UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         comment = self.get_object()
-        print(self.request.user.is_authenticated and self.request.user.username == comment.author.username)
         return (
             self.request.user.is_authenticated
             and self.request.user.username == comment.author.username
@@ -202,7 +199,6 @@ class CommentDeleteView(UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         comment = self.get_object()
-        print(self.request.user.is_authenticated and self.request.user.username == comment.author.username)
         return (
             self.request.user.is_authenticated
             and self.request.user.username == comment.author.username
