@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from django.shortcuts import get_object_or_404
 
 from core.models import PublishedModel, CreatedAtModel
 
@@ -42,13 +41,6 @@ class Post(PublishedModel, CreatedAtModel):
     image = models.ImageField('Фото', blank=True)
     comment_count = models.IntegerField('Комментарии', default=0)
 
-    # @property
-    # def comment_count(self):
-    #     # post = Post.objects.get(pk=self.pk).comments.count()
-    #     # if not post:
-    #     #     return 0
-    #     return self.comments.count()
-
     class Meta:
         ordering = ('-pub_date',)
         verbose_name = 'публикация'
@@ -59,7 +51,6 @@ class Post(PublishedModel, CreatedAtModel):
         return self.title
 
     def get_absolute_url(self):
-        # С помощью функции reverse() возвращаем URL объекта.
         return reverse('blog:post_detail', kwargs={'pk': self.pk})
 
 
@@ -112,5 +103,4 @@ class Comment(models.Model):
         ordering = ('created_at',)
 
     def get_absolute_url(self):
-        # С помощью функции reverse() возвращаем URL объекта.
         return reverse('blog:post_detail', kwargs={'pk': self.post.id})
