@@ -19,21 +19,28 @@ from core.utils import posts_query_set
 User = get_user_model()
 
 
-class CategoryDetailView(ListView):
-    paginate_by = 5
+class CategoryListView(ListView):
+    paginate_by = 10
     model = Category
     template_name = 'blog/category.html'
     slug_url_kwarg, slug_field = 'slug', 'slug'
 
     def get_queryset(self):
-        self.queryset = posts_query_set().filter(category__slug=self.kwargs['slug'])
+        self.queryset = posts_query_set().filter(
+            category__slug=self.kwargs['slug'],
+            is_published=True,
+            pub_date__lte=timezone.now(),
+        )
         return self.queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # category = Category.objects.get(slug=self.kwargs['slug'])
-        category = self.queryset[0].category
-        print(category)
+        category = get_object_or_404(
+            Category.objects.filter(
+                slug=self.kwargs['slug'],
+                is_published=True
+            )
+        )
         context['category'] = category
         return context
         # one_category = get_object_or_404(
