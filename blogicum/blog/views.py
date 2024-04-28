@@ -25,9 +25,9 @@ class PaginateListViewMixin(ListView):
 
 class UserVerification(UserPassesTestMixin):
     def test_func(self):
-        comment = self.get_object()
+        obj = self.get_object()
         return (
-            self.request.user.username == comment.author.username
+            self.request.user.username == obj.author.username
         )
 
     def handle_no_permission(self):
@@ -199,7 +199,7 @@ class PostUpdateView(LoginRequiredMixin, UserVerification, UpdateView):
         return redirect('blog:post_detail', pk=self.kwargs['pk'])
 
 
-class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, UserVerification, DeleteView):
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -207,9 +207,6 @@ class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         self.instance = get_object_or_404(Post, pk=kwargs['pk'])
         return super().dispatch(request, *args, **kwargs)
-
-    def test_func(self):
-        return self.request.user == self.instance.author
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
