@@ -8,7 +8,6 @@ from django.urls import reverse
 from django.views.generic import (
     ListView, CreateView, UpdateView, DeleteView, DetailView)
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import Post, Category, Comment
 from .forms import CommentForm, PostForm, UserForm
@@ -20,8 +19,22 @@ User = get_user_model()
 COUNT_POSTS_PER_PAGE = 10
 
 
-class CategoryListView(ListView):
+class PaginateListViewMixin(ListView):
     paginate_by = COUNT_POSTS_PER_PAGE
+
+
+class UserVerification(UserPassesTestMixin):
+    def test_func(self):
+        comment = self.get_object()
+        return (
+            self.request.user.username == comment.author.username
+        )
+
+    def handle_no_permission(self):
+        raise Http404
+
+
+class CategoryListView(PaginateListViewMixin):
     model = Category
     template_name = 'blog/category.html'
     slug_url_kwarg, slug_field = 'slug', 'slug'
@@ -46,11 +59,10 @@ class CategoryListView(ListView):
         return context
 
 
-class PostListView(ListView):
+class PostListView(PaginateListViewMixin):
     model = Post
     template_name = 'blog/index.html'
     ordering = '-pub_date'
-    paginate_by = COUNT_POSTS_PER_PAGE
 
     def get_queryset(self):
         queryset = posts_query_set().filter(
@@ -58,24 +70,6 @@ class PostListView(ListView):
             category__is_published=True,
             pub_date__lte=timezone.now(),)
         return queryset
-
-    # def get_context_data(self, **kwargs):
-    #     context = super().get_context_data(**kwargs)
-    #     page_obj = posts_query_set().filter(
-    #         is_published=True,
-    #         category__is_published=True,
-    #         pub_date__lte=timezone.now(),)
-        # paginator = Paginator(page_obj, COUNT_POSTS_PER_PAGE)
-        # page_number = self.request.GET.get('page')
-        # try:
-        #     page_obj = paginator.page(page_number)
-        # except PageNotAnInteger:
-        #     page_obj = paginator.page(1)
-        # except EmptyPage:
-        #     page_obj = paginator.page(paginator.num_pages)
-
-        # context['page_obj'] = page_obj
-        # return context
 
 
 class PostDetailView(UserPassesTestMixin, DetailView):
@@ -118,9 +112,8 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class UserListView(ListView):
+class UserListView(PaginateListViewMixin):
     model = Post
-    paginate_by = COUNT_POSTS_PER_PAGE
     template_name = 'blog/profile.html'
     slug_url_kwarg, slug_field = 'username', 'username'
     context_object_name = 'page_obj'
@@ -160,39 +153,23 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return reverse('blog:post_detail', kwargs={'pk': pk})
 
 
-class CommentUpdateView(UserPassesTestMixin, UpdateView):
+class CommentUpdateView(LoginRequiredMixin,
+                        UserVerification,
+                        UpdateView):
     model = Comment
     fields = ('text',)
     template_name = 'blog/comment.html'
 
-    def test_func(self):
-        comment = self.get_object()
-        return (
-            self.request.user.is_authenticated
-            and self.request.user.username == comment.author.username
-        )
 
-    def handle_no_permission(self):
-        raise Http404
-
-
-class CommentDeleteView(UserPassesTestMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin,
+                        UserVerification,
+                        DeleteView):
     model = Comment
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
         self.post_id = get_object_or_404(Post, pk=kwargs['id'])
         return super().dispatch(request, *args, **kwargs)
-
-    def test_func(self):
-        comment = self.get_object()
-        return (
-            self.request.user.is_authenticated
-            and self.request.user.username == comment.author.username
-        )
-
-    def handle_no_permission(self):
-        raise Http404
 
     def get_success_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.post_id.id})
@@ -213,16 +190,13 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-class PostUpdateView(LoginRequiredMixin, UpdateView):
+class PostUpdateView(LoginRequiredMixin, UserVerification, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
 
-    def form_valid(self, form):
-        post = self.get_object()
-        if post.author != self.request.user:
-            return redirect('blog:post_detail', pk=post.id)
-        return super().form_valid(form)
+    def handle_no_permission(self):
+        return redirect('blog:post_detail', pk=self.kwargs['pk'])
 
 
 class PostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):

@@ -7,7 +7,3 @@ def posts_query_set():
         'category',
         'author',
     ))
-
-
-def ready_for_pub():
-    pass
