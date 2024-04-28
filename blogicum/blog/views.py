@@ -1,5 +1,3 @@
-from typing import Any
-from django.db.models.query import QuerySet
 from django.http import Http404
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
@@ -122,7 +120,6 @@ class UserListView(PaginateListViewMixin):
         queryset = posts_query_set().filter(
             author__username=self.kwargs['username']
         )
-        print(queryset)
         return queryset
 
     def get_context_data(self, **kwargs):
