@@ -1,6 +1,5 @@
 from django.http import Http404
 from django.utils import timezone
-
 from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -14,8 +13,6 @@ from .models import Post, Category, Comment
 from .forms import CommentForm, PostForm
 from core.utils import posts_query_set
 
-
-COUNT_POSTS = 5
 
 User = get_user_model()
 

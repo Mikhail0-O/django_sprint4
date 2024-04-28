@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post, Category, Location
+from .models import Post, Category, Location, Comment
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -12,7 +12,8 @@ class PostAdmin(admin.ModelAdmin):
         'location',
         'category',
         'is_published',
-        'created_at'
+        'created_at',
+        'image',
     ]
 
     list_editable = (
@@ -82,9 +83,28 @@ class LocationAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
 
 
+class CommentAdmin(admin.ModelAdmin):
+    list_display = [
+        'text',
+        'author',
+        'created_at',
+        'post',
+    ]
+
+    list_display_links = None
+    search_fields = ('author',)
+    list_filter = ('created_at',)
+    list_per_page = 3
+
+    fields = [
+        'text', ('author', 'created_at'),
+    ]
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Location, LocationAdmin)
+admin.site.register(Comment, CommentAdmin)
 
 admin.site.empty_value_display = 'Пусто'
 

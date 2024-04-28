@@ -89,18 +89,27 @@ class Location(PublishedModel, CreatedAtModel):
         return self.name
 
 
-class Comment(models.Model):
+class Comment(CreatedAtModel):
     text = models.TextField('Комментарий')
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='comments',
+        verbose_name='Комментируемый пост',
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария',
+    )
 
     class Meta:
         ordering = ('created_at',)
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return self.name
 
     def get_absolute_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.post.id})
