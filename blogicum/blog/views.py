@@ -3,7 +3,6 @@ from django.db.models.query import QuerySet
 from django.http import Http404
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.views.generic import (
@@ -12,26 +11,28 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import Post, Category, Comment
-from .forms import CommentForm, PostForm
-from core.utils import posts_query_set
+from .forms import CommentForm, PostForm, UserForm
+from .utils import posts_query_set
 
 
 User = get_user_model()
 
+COUNT_POSTS_PER_PAGE = 10
+
 
 class CategoryListView(ListView):
-    paginate_by = 10
+    paginate_by = COUNT_POSTS_PER_PAGE
     model = Category
     template_name = 'blog/category.html'
     slug_url_kwarg, slug_field = 'slug', 'slug'
 
     def get_queryset(self):
-        self.queryset = posts_query_set().filter(
+        queryset = posts_query_set().filter(
             category__slug=self.kwargs['slug'],
             is_published=True,
             pub_date__lte=timezone.now(),
         )
-        return self.queryset
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -43,38 +44,6 @@ class CategoryListView(ListView):
         )
         context['category'] = category
         return context
-        # one_category = get_object_or_404(
-        #     Category.objects.filter(
-        #         is_published=True,
-        #     ),
-        #     slug=self.kwargs['slug'],
-        # )
-
-        # page_obj = posts_query_set().filter(
-        #     is_published=True,
-        #     pub_date__lte=timezone.now(),
-            # category=one_category,
-        # )
-
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     # category = self.request.GET.get('slug')
-    #     return queryset
-
-        # paginator = Paginator(page_obj, 10)
-        # page_number = self.request.GET.get('page')
-        # try:
-        #     page_obj = paginator.page(page_number)
-        # except PageNotAnInteger:
-        #     page_obj = paginator.page(1)
-        # except EmptyPage:
-        #     page_obj = paginator.page(paginator.num_pages)
-
-        # for post in page_obj:
-        #     comment_count = Comment.objects.filter(post=post).count()
-        #     post.comment_count = comment_count
-        # context['page_obj'] = page_obj
-        # return context
 
 
 class PostListView(ListView):
@@ -85,10 +54,10 @@ class PostListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         page_obj = posts_query_set().filter(
-            Q(is_published=True)
-            & Q(category__is_published=True)
-            & Q(pub_date__lte=timezone.now()))
-        paginator = Paginator(page_obj, 10)
+            is_published=True,
+            category__is_published=True,
+            pub_date__lte=timezone.now(),)
+        paginator = Paginator(page_obj, COUNT_POSTS_PER_PAGE)
         page_number = self.request.GET.get('page')
         try:
             page_obj = paginator.page(page_number)
@@ -97,9 +66,6 @@ class PostListView(ListView):
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
 
-        for post in page_obj:
-            comment_count = Comment.objects.filter(post=post).count()
-            post.comment_count = comment_count
         context['page_obj'] = page_obj
         return context
 
@@ -111,9 +77,7 @@ class PostDetailView(UserPassesTestMixin, DetailView):
     def test_func(self):
         post = self.get_object()
         return (
-            ((self.request.user.is_anonymous
-             or self.request.user.is_authenticated)
-             and post.is_published
+            (post.is_published
              and post.category.is_published
              and post.pub_date <= timezone.now())
             or self.request.user == post.author
@@ -133,7 +97,7 @@ class PostDetailView(UserPassesTestMixin, DetailView):
 
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
-    fields = ('username', 'first_name', 'last_name', 'email')
+    form_class = UserForm
     template_name = 'blog/user.html'
 
     def get_object(self):
@@ -146,33 +110,46 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-class UserDetailView(DetailView):
-    model = User
+class UserDetailView(ListView):
+    model = Post
+    paginate_by = COUNT_POSTS_PER_PAGE
     template_name = 'blog/profile.html'
     slug_url_kwarg, slug_field = 'username', 'username'
-    context_object_name = 'profile'
+    context_object_name = 'page_obj'
+
+    def get_queryset(self):
+        queryset = posts_query_set().filter(
+            author__username=self.kwargs['username']
+        )
+        print(queryset)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        page_obj = posts_query_set().filter(
-            author__username=self.kwargs['username']
+        context['profile'] = get_object_or_404(
+            User.objects.filter(
+                username=self.kwargs['username']
+            )
         )
-
-        paginator = Paginator(page_obj, 10)
-        page_number = self.request.GET.get('page')
-        try:
-            page_obj = paginator.page(page_number)
-        except PageNotAnInteger:
-            page_obj = paginator.page(1)
-        except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)
-
-        for post in page_obj:
-            comment_count = Comment.objects.filter(post=post).count()
-            post.comment_count = comment_count
-            print(comment_count)
-        context['page_obj'] = page_obj
         return context
+
+    # def get_context_data(self, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     page_obj = posts_query_set().filter(
+    #         author__username=self.kwargs['username']
+    #     )
+
+        # paginator = Paginator(page_obj, COUNT_POSTS_PER_PAGE)
+        # page_number = self.request.GET.get('page')
+        # try:
+        #     page_obj = paginator.page(page_number)
+        # except PageNotAnInteger:
+        #     page_obj = paginator.page(1)
+        # except EmptyPage:
+        #     page_obj = paginator.page(paginator.num_pages)
+
+        # context['page_obj'] = page_obj
+        # return context
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):

@@ -39,7 +39,9 @@ class Post(PublishedModel, CreatedAtModel):
         verbose_name='Категория',
     )
     image = models.ImageField('Фото', blank=True)
-    comment_count = models.IntegerField('Комментарии', default=0)
+
+    def comment_count(self):
+        return self.comments.count()
 
     class Meta:
         ordering = ('-pub_date',)

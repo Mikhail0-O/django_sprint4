@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
@@ -11,10 +11,12 @@ User = get_user_model()
 FORMAT_DATE = '%Y-%m-%dT%H:%M'
 
 
-class UserForm(UserCreationForm):
+class UserForm(UserChangeForm):
+    password = None
+
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email',)
+        fields = ('username', 'first_name', 'last_name', 'email')
 
 
 class CommentForm(forms.ModelForm):
