@@ -1,3 +1,5 @@
+from typing import Any
+from django.db.models.query import QuerySet
 from django.http import Http404
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, redirect
@@ -17,41 +19,55 @@ from core.utils import posts_query_set
 User = get_user_model()
 
 
-class CategoryDetailView(DetailView):
+class CategoryDetailView(ListView):
+    paginate_by = 5
     model = Category
     template_name = 'blog/category.html'
     slug_url_kwarg, slug_field = 'slug', 'slug'
 
+    def get_queryset(self):
+        self.queryset = posts_query_set().filter(category__slug=self.kwargs['slug'])
+        return self.queryset
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        one_category = get_object_or_404(
-            Category.objects.filter(
-                is_published=True,
-            ),
-            slug=self.kwargs['slug'],
-        )
-
-        page_obj = posts_query_set().filter(
-            is_published=True,
-            pub_date__lte=timezone.now(),
-            category=one_category,
-        )
-
-        paginator = Paginator(page_obj, 10)
-        page_number = self.request.GET.get('page')
-        try:
-            page_obj = paginator.page(page_number)
-        except PageNotAnInteger:
-            page_obj = paginator.page(1)
-        except EmptyPage:
-            page_obj = paginator.page(paginator.num_pages)
-
-        for post in page_obj:
-            comment_count = Comment.objects.filter(post=post).count()
-            post.comment_count = comment_count
-        context['page_obj'] = page_obj
+        # category = Category.objects.get(slug=self.kwargs['slug'])
+        category = self.queryset[0].category
+        print(category)
+        context['category'] = category
         return context
+        # one_category = get_object_or_404(
+        #     Category.objects.filter(
+        #         is_published=True,
+        #     ),
+        #     slug=self.kwargs['slug'],
+        # )
+
+        # page_obj = posts_query_set().filter(
+        #     is_published=True,
+        #     pub_date__lte=timezone.now(),
+            # category=one_category,
+        # )
+
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     # category = self.request.GET.get('slug')
+    #     return queryset
+
+        # paginator = Paginator(page_obj, 10)
+        # page_number = self.request.GET.get('page')
+        # try:
+        #     page_obj = paginator.page(page_number)
+        # except PageNotAnInteger:
+        #     page_obj = paginator.page(1)
+        # except EmptyPage:
+        #     page_obj = paginator.page(paginator.num_pages)
+
+        # for post in page_obj:
+        #     comment_count = Comment.objects.filter(post=post).count()
+        #     post.comment_count = comment_count
+        # context['page_obj'] = page_obj
+        # return context
 
 
 class PostListView(ListView):
