@@ -40,9 +40,6 @@ class Post(PublishedModel, CreatedAtModel):
     )
     image = models.ImageField('Фото', blank=True)
 
-    def comment_count(self):
-        return self.comments.count()
-
     class Meta:
         ordering = ('-pub_date',)
         verbose_name = 'публикация'

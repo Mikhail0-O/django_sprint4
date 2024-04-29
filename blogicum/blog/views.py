@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.views.generic import (
     ListView, CreateView, UpdateView, DeleteView, DetailView)
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Count
 
 from .models import Post, Category, Comment
 from .forms import CommentForm, PostForm, UserForm
@@ -60,13 +61,15 @@ class CategoryListView(PaginateListViewMixin):
 class PostListView(PaginateListViewMixin):
     model = Post
     template_name = 'blog/index.html'
-    ordering = '-pub_date'
 
     def get_queryset(self):
         queryset = posts_query_set().filter(
             is_published=True,
             category__is_published=True,
-            pub_date__lte=timezone.now(),)
+            pub_date__lte=timezone.now(),
+        ).annotate(
+            comment_count=Count('comments')
+        ).order_by('-pub_date')
         return queryset
 
 
@@ -117,9 +120,19 @@ class UserListView(PaginateListViewMixin):
     context_object_name = 'page_obj'
 
     def get_queryset(self):
-        queryset = posts_query_set().filter(
-            author__username=self.kwargs['username']
-        )
+        if self.request.user.username == self.kwargs['username']:
+            queryset = posts_query_set().filter(
+                author__username=self.kwargs['username']
+            ).annotate(
+                comment_count=Count('comments')
+            ).order_by('-pub_date')
+        else:
+            queryset = posts_query_set().filter(
+                author__username=self.kwargs['username'],
+                is_published=True
+            ).annotate(
+                comment_count=Count('comments')
+            ).order_by('-pub_date')
         return queryset
 
     def get_context_data(self, **kwargs):
