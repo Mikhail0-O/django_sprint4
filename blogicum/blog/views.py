@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
 
 from .models import Post, Category, Comment
-from .forms import CommentForm, PostForm, UserForm, UserUdateForm
+from .forms import CommentForm, PostForm, UserUdateForm
 from .utils import posts_query_set
 
 
