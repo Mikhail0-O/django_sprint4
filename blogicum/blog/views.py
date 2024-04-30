@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
 
 from .models import Post, Category, Comment
-from .forms import CommentForm, PostForm, UserForm
+from .forms import CommentForm, PostForm, UserForm, UserUdateForm
 from .utils import posts_query_set
 
 
@@ -100,7 +100,9 @@ class PostDetailView(UserPassesTestMixin, DetailView):
 
 class UserUpdateView(LoginRequiredMixin, UpdateView):
     model = User
-    form_class = UserForm
+    form_class = UserUdateForm
+    exclude = ('password',)
+    password = None
     template_name = 'blog/user.html'
 
     def get_object(self):

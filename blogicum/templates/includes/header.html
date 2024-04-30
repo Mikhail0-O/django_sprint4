@@ -1,6 +1,6 @@
 {% load static %}
 <header>
-  <nav class="navbar navbar-light" style="background-color: lightskyblue">
+  <nav class="navbar navbar-dark" style="background-color: black">
     <div class="container">
       <a class="navbar-brand" href="{% url 'blog:index' %}">
         <img src="{% static 'img/logo.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
@@ -8,13 +8,13 @@
       </a>
       {% with request.resolver_match.view_name as view_name %}
         <ul class="nav  nav-pills">
-          <li class="nav-item">
-            <a class="nav-link {% if view_name == 'pages:about' %} text-white {% endif %}" href="{% url 'pages:about' %}">
+          <li class="nav-item ">
+            <a class="nav-link {% if view_name == 'pages:about' %} text-white {% else %} text-success {% endif %}" href="{% url 'pages:about' %}">
               О проекте
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if view_name == 'pages:rules' %} text-white {% endif %}" href="{% url 'pages:rules' %}">
+            <a class="nav-link {% if view_name == 'pages:rules' %} text-white {% else %} text-success {% endif %}" href="{% url 'pages:rules' %}">
               Правила
             </a>
           </li>
@@ -29,9 +29,9 @@
             </div>
           {% else %}
             <div class="btn-group" role="group" aria-label="Basic outlined example">
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
+              <button type="button" class="btn btn-outline-success"><a class="text-decoration-none text-reset"
                   href="{% url 'login' %}">Войти</a></button>
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
+              <button type="button" class="btn btn-outline-success"><a class="text-decoration-none text-reset"
                   href="{% url 'registration' %}">Регистрация</a></button>
             </div>
           {% endif %}
